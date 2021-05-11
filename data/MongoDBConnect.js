@@ -7,12 +7,16 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
 });
 
+async function getCollection() {
+  return client.db("myFirstDatabase").collection("sportsCasters");
+}
+
 async function addSportsCaster(sportsCaster) {
   // create a new sports caster
   try {
     await client.connect();
 
-    const collection = client.db("myFirstDatabase").collection("sportsCasters");
+    const collection = await getCollection();
     collection.insertOne(sportsCaster);
   } catch (err) {
     console.log(error);
@@ -27,7 +31,7 @@ async function addTake(take, name) {
   try {
     await client.connect();
 
-    const collection = client.db("myFirstDatabase").collection("sportsCasters");
+    const collection = await getCollection();
     const query = { name: name };
 
     const updateDocument = {
@@ -56,9 +60,8 @@ async function updateTake(takeId, fieldsToSet) {
   try {
     await client.connect();
     const fieldsInSetFormat = createTakesUpdateObject(fieldsToSet);
-    console.log({fieldsInSetFormat})
-    const result = await client.db('myFirstDatabase').collection('sportsCasters').updateOne({"takes.takeId": takeId}, { $set: fieldsInSetFormat});
-    console.log({result})
+    const collection = await getCollection()
+    await collection.updateOne({"takes.takeId": takeId}, { $set: fieldsInSetFormat});
   } catch (err) {
     console.log("error in update take", err);
   } finally {
@@ -70,19 +73,28 @@ async function deleteSportsCaster() {
   // remove a sports caster all together
 }
 
-async function deleteTake() {
+async function deleteTake(sportsCasterName, takeId) {
   // remove a sports caster all together
+  try {
+    await client.connect();
+    const collection = await getCollection();
+    await collection.updateOne({name: sportsCasterName}, { $pull: { takes: {takeId: takeId } } } );
+  } catch (err) {
+    console.log('error in deleteTake', err);
+  } finally {
+    client.close()
+  }
 }
 
 // DONE
-async function readDocument() {
+async function readDocument(id) {
   // get a sports caster
   try {
     await client.connect();
 
-    const collection = client.db("myFirstDatabase").collection("sportsCasters");
+    const collection = await getCollection();
     const query = {
-      name: "Dan Patrick",
+      _id: ObjectId(id),
     };
     const sportsCaster = await collection.findOne(query);
     console.log(sportsCaster);
@@ -93,10 +105,24 @@ async function readDocument() {
   }
 }
 
+async function getAll() {
+  try {
+    await client.connect();
+    const collection = await getCollection();
+    const casters = await collection.find().toArray();
+    console.log(casters);
+  } catch (err) {
+    console.log('error in get all', err);
+  } finally {
+    await client.close();
+  }
+}
+
 module.exports = {
   readDocument,
   deleteSportsCaster,
   deleteTake,
+  getAll,
   updateTake,
   addTake,
   addSportsCaster,
