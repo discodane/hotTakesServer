@@ -1,4 +1,5 @@
 const MongoClient = require("mongodb").MongoClient;
+const ObjectId = require('mongodb').ObjectID;
 const uri =
   "mongodb+srv://test:test@cluster0.sssef.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const client = new MongoClient(uri, {
@@ -20,6 +21,7 @@ async function addSportsCaster(sportsCaster) {
   }
 }
 
+// DONE
 async function addTake(take, name) {
   // add to things like updating platform or adding a new take
   try {
@@ -40,18 +42,23 @@ async function addTake(take, name) {
   }
 }
 
+// DONE
+const createTakesUpdateObject = (fields) => {
+  const returnable = {};
+  for (let [key, value] of Object.entries(fields)) {
+    returnable[`takes.$.${key}`] = value
+  }
+  return returnable
+}
+
+// DONE
 async function updateTake(takeId, fieldsToSet) {
   try {
-    console.log("trying");
     await client.connect();
-
-    const collection = client.db("myFirstDatabase").collection("sportsCasters");
-    const query = { takeId: takeId };
-    const update = {
-      $set: { ...fieldsToSet },
-    };
-    console.log({ update });
-    await collection.findOneAndUpdate(query, update);
+    const fieldsInSetFormat = createTakesUpdateObject(fieldsToSet);
+    console.log({fieldsInSetFormat})
+    const result = await client.db('myFirstDatabase').collection('sportsCasters').updateOne({"takes.takeId": takeId}, { $set: fieldsInSetFormat});
+    console.log({result})
   } catch (err) {
     console.log("error in update take", err);
   } finally {
@@ -67,6 +74,7 @@ async function deleteTake() {
   // remove a sports caster all together
 }
 
+// DONE
 async function readDocument() {
   // get a sports caster
   try {
