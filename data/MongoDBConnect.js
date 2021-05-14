@@ -1,54 +1,51 @@
-const MongoClient = require("mongodb").MongoClient;
-const ObjectId = require('mongodb').ObjectID;
+const MongoClient = require('mongodb').MongoClient
+const ObjectId = require('mongodb').ObjectID
 const uri =
-  "mongodb+srv://test:test@cluster0.sssef.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+  'mongodb+srv://test:test@cluster0.sssef.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+})
 
 async function getCollection() {
-  return client.db("myFirstDatabase").collection("sportsCasters");
+  await client.connect()
+  return client.db('myFirstDatabase').collection('sportsCasters')
 }
 
 async function addSportsCaster(sportsCaster) {
   // create a new sports caster
   try {
-    await client.connect();
-
-    const collection = await getCollection();
-    collection.insertOne(sportsCaster);
+    const collection = await getCollection()
+    await collection.insertOne(sportsCaster)
   } catch (err) {
-    console.log(error);
+    console.log(error)
   } finally {
-    await client.close();
+    await client.close()
   }
 }
 
 // DONE
-async function addTake(take, name) {
+async function addTake(id, take) {
   // add to things like updating platform or adding a new take
   try {
-    await client.connect();
-
-    const collection = await getCollection();
-    const query = { name: name };
+    const collection = await getCollection()
+    const query = { _id: ObjectId(id) }
 
     const updateDocument = {
       $push: { takes: take },
-    };
+    }
 
-    await collection.updateOne(query, updateDocument);
+    await collection.updateOne(query, updateDocument)
   } catch (err) {
-    console.log(err);
+    console.log(err)
   } finally {
-    client.close();
+    client.close()
   }
 }
 
 // DONE
 const createTakesUpdateObject = (fields) => {
-  const returnable = {};
+  const returnable = {}
   for (let [key, value] of Object.entries(fields)) {
     returnable[`takes.$.${key}`] = value
   }
@@ -58,72 +55,98 @@ const createTakesUpdateObject = (fields) => {
 // DONE
 async function updateTake(takeId, fieldsToSet) {
   try {
-    await client.connect();
-    const fieldsInSetFormat = createTakesUpdateObject(fieldsToSet);
+    const fieldsInSetFormat = createTakesUpdateObject(fieldsToSet)
     const collection = await getCollection()
-    await collection.updateOne({"takes.takeId": takeId}, { $set: fieldsInSetFormat});
+    await collection.updateOne(
+      { 'takes.takeId': takeId },
+      { $set: fieldsInSetFormat }
+    )
   } catch (err) {
-    console.log("error in update take", err);
+    console.log('error in update take', err)
   } finally {
-    client.close();
+    client.close()
   }
 }
 
-async function deleteSportsCaster() {
-  // remove a sports caster all together
-}
-
-async function deleteTake(sportsCasterName, takeId) {
+async function deleteTake(id, takeId) {
   // remove a sports caster all together
   try {
-    await client.connect();
-    const collection = await getCollection();
-    await collection.updateOne({name: sportsCasterName}, { $pull: { takes: {takeId: takeId } } } );
+    const collection = await getCollection()
+    await collection.updateOne(
+      { _id: ObjectId(id) },
+      { $pull: { takes: { takeId: takeId } } }
+    )
   } catch (err) {
-    console.log('error in deleteTake', err);
+    console.log('error in deleteTake', err)
+  } finally {
+    client.close()
+  }
+}
+
+async function deleteSportsCaster(id) {
+  // remove a sports caster all together
+  try {
+    const collection = await getCollection()
+    await collection.deleteOne({ _id: ObjectId(id) })
+  } catch (err) {
+    console.log('error in delete caster', err)
+  } finally {
+    client.close()
+  }
+}
+
+async function updateSportsCaster(id, fieldsToSet) {
+  try {
+    const collection = await getCollection()
+    await collection.updateOne(
+      {
+        _id: ObjectId(id),
+      },
+      { $set: fieldsToSet }
+    )
+  } catch (err) {
+    console.log('update caster', err)
   } finally {
     client.close()
   }
 }
 
 // DONE
-async function readDocument(id) {
+async function getSportsCaster(id) {
   // get a sports caster
   try {
-    await client.connect();
-
-    const collection = await getCollection();
+    const collection = await getCollection()
     const query = {
       _id: ObjectId(id),
-    };
-    const sportsCaster = await collection.findOne(query);
-    console.log(sportsCaster);
+    }
+    const sportsCaster = await collection.findOne(query)
+    return sportsCaster
   } catch (err) {
-    console.log(err);
+    console.log(err)
   } finally {
-    await client.close();
+    await client.close()
   }
 }
 
 async function getAll() {
   try {
-    await client.connect();
-    const collection = await getCollection();
-    const casters = await collection.find().toArray();
-    console.log(casters);
+    const collection = await getCollection()
+    const casters = await collection.find().toArray()
+    return casters
   } catch (err) {
-    console.log('error in get all', err);
+    console.log('error in get all', err)
   } finally {
-    await client.close();
+    await client.close()
   }
 }
 
 module.exports = {
-  readDocument,
+  getSportsCaster,
   deleteSportsCaster,
   deleteTake,
   getAll,
   updateTake,
+  updateSportsCaster,
   addTake,
   addSportsCaster,
-};
+}
