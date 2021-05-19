@@ -2,20 +2,27 @@ const MongoClient = require('mongodb').MongoClient
 const ObjectId = require('mongodb').ObjectID
 const uri =
   'mongodb+srv://test:test@cluster0.sssef.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
-const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
 
-async function getCollection() {
+getClient = () => {
+  const client = new MongoClient(uri, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+    connectTimeoutMS: 30000,
+    keepAlive: 1,
+  })
+  return client
+}
+
+async function getCollection(client) {
   await client.connect()
   return client.db('myFirstDatabase').collection('sportsCasters')
 }
 
 async function addSportsCaster(sportsCaster) {
   // create a new sports caster
+  const client = await getClient()
   try {
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     await collection.insertOne(sportsCaster)
   } catch (err) {
     console.log(error)
@@ -27,10 +34,11 @@ async function addSportsCaster(sportsCaster) {
 // DONE
 async function addTake(id, take) {
   // add to things like updating platform or adding a new take
+  const client = await getClient()
   try {
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     const query = { _id: ObjectId(id) }
-
+    take._id = ObjectId().toString()
     const updateDocument = {
       $push: { takes: take },
     }
@@ -39,11 +47,11 @@ async function addTake(id, take) {
   } catch (err) {
     console.log(err)
   } finally {
-    client.close()
+    await client.close()
   }
 }
-
 // DONE
+
 const createTakesUpdateObject = (fields) => {
   const returnable = {}
   for (let [key, value] of Object.entries(fields)) {
@@ -54,9 +62,10 @@ const createTakesUpdateObject = (fields) => {
 
 // DONE
 async function updateTake(takeId, fieldsToSet) {
+  const client = await getClient()
   try {
     const fieldsInSetFormat = createTakesUpdateObject(fieldsToSet)
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     await collection.updateOne(
       { 'takes.takeId': takeId },
       { $set: fieldsInSetFormat }
@@ -64,14 +73,15 @@ async function updateTake(takeId, fieldsToSet) {
   } catch (err) {
     console.log('error in update take', err)
   } finally {
-    client.close()
+    await client.close()
   }
 }
 
 async function deleteTake(id, takeId) {
   // remove a sports caster all together
+  const client = await getClient()
   try {
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     await collection.updateOne(
       { _id: ObjectId(id) },
       { $pull: { takes: { takeId: takeId } } }
@@ -79,25 +89,27 @@ async function deleteTake(id, takeId) {
   } catch (err) {
     console.log('error in deleteTake', err)
   } finally {
-    client.close()
+    await client.close()
   }
 }
 
 async function deleteSportsCaster(id) {
   // remove a sports caster all together
+  const client = await getClient()
   try {
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     await collection.deleteOne({ _id: ObjectId(id) })
   } catch (err) {
     console.log('error in delete caster', err)
   } finally {
-    client.close()
+    await client.close()
   }
 }
 
 async function updateSportsCaster(id, fieldsToSet) {
+  const client = await getClient()
   try {
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     await collection.updateOne(
       {
         _id: ObjectId(id),
@@ -107,15 +119,16 @@ async function updateSportsCaster(id, fieldsToSet) {
   } catch (err) {
     console.log('update caster', err)
   } finally {
-    client.close()
+    await client.close()
   }
 }
 
 // DONE
 async function getSportsCaster(id) {
   // get a sports caster
+  const client = await getClient()
   try {
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     const query = {
       _id: ObjectId(id),
     }
@@ -129,8 +142,9 @@ async function getSportsCaster(id) {
 }
 
 async function getAll() {
+  const client = await getClient()
   try {
-    const collection = await getCollection()
+    const collection = await getCollection(client)
     const casters = await collection.find().toArray()
     return casters
   } catch (err) {

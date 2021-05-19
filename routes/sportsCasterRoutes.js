@@ -28,14 +28,15 @@ router.get('/getAllSportsCasters', async function (req, res, next) {
   res.send(allCasters)
 })
 
-router.get('/getSportsCaster', async function (req, res, next) {
-  const caster = await getSportsCaster(req.body)
+router.get('/getSportsCaster/:id', async function (req, res, next) {
+  const { id } = req.params
+  const caster = await getSportsCaster(id)
   res.send(caster)
 })
 
 router.delete('/deleteSportsCaster', async function (req, res, next) {
-  const body = req.body
-  await deleteSportsCaster(body)
+  const { id } = req.body
+  await deleteSportsCaster(id)
   res.sendStatus(200)
 })
 
