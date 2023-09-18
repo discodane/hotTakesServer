@@ -12,6 +12,10 @@ const {
 router.post('/addSportsCaster', async function (req, res, next) {
   const body = req.body
   console.log({ body })
+  if (!body.name) {
+    res.status(400).json({ message: 'Missing required name field' });
+    return
+  }
   await addSportsCaster(body)
   res.sendStatus(200)
 })

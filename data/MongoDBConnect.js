@@ -1,7 +1,8 @@
 const MongoClient = require('mongodb').MongoClient
 const ObjectId = require('mongodb').ObjectID
+const casterHelpers = require('../utilities/casterHelpers')
 const uri =
-  'mongodb+srv://test:test@cluster0.sssef.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
+  'mongodb+srv://test:test@cluster0.xbdwkpo.mongodb.net/?retryWrites=true&w=majority'
 
 getClient = () => {
   const client = new MongoClient(uri, {
@@ -23,11 +24,21 @@ async function addSportsCaster(sportsCaster) {
   const client = await getClient()
   try {
     const collection = await getCollection(client)
-    await collection.insertOne(sportsCaster)
+    await collection.insertOne({
+      ...sportsCaster,
+      takes: [],
+    })
   } catch (err) {
     console.log(error)
   } finally {
     await client.close()
+  }
+}
+
+async function calculateNewScore(id, result) {
+  const caster = await getSportsCaster(id)
+  if (caster.score) {
+    const newScore = casterHelpers.addTakeToAverage(caster.score, result)
   }
 }
 
@@ -44,6 +55,7 @@ async function addTake(id, take) {
     }
 
     await collection.updateOne(query, updateDocument)
+    await calculateNewScore(id, take.result)
   } catch (err) {
     console.log(err)
   } finally {
@@ -78,7 +90,7 @@ async function updateTake(takeId, fieldsToSet) {
 }
 
 async function deleteTake(id, takeId) {
-  // remove a sports caster all together
+
   const client = await getClient()
   try {
     const collection = await getCollection(client)
