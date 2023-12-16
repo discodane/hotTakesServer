@@ -2,7 +2,7 @@ const MongoClient = require('mongodb').MongoClient
 const ObjectId = require('mongodb').ObjectID
 const casterHelpers = require('../utilities/casterHelpers')
 const uri =
-  'mongodb+srv://test:test@cluster0.xbdwkpo.mongodb.net/?retryWrites=true&w=majority'
+  'mongodb+srv://test:test@cluster0.xbdwkpo.mongodb.net/?retryWrites=true&w=majority';
 
 getClient = () => {
   const client = new MongoClient(uri, {
@@ -49,6 +49,7 @@ async function addTake(id, take) {
   try {
     const collection = await getCollection(client)
     const query = { _id: ObjectId(id) }
+    console.log({query});
     take._id = ObjectId().toString()
     const updateDocument = {
       $push: { takes: take },
